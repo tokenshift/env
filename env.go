@@ -5,13 +5,15 @@ import "os"
 import "strconv"
 import "strings"
 
-type Entry struct {
-	Key string
-	Value string
-}
+// Parses an environment variable of the form "KEY=VALUE".
+func parseEntry(e string) (key, value string, err error) {
+	sep := strings.Index(e, "=")
 
-func (e Entry) String() string {
-	return fmt.Sprintf("%s=%s", e.Key, e.Value)
+	if sep < 1 {
+		return "", "", fmt.Errorf("Malformed environment variable: %s", e)
+	}
+
+	return e[0:sep], e[sep+1:], nil
 }
 
 // Returns a map of all environment variables.
@@ -19,9 +21,9 @@ func All() (map[string] string) {
 	m := make(map[string] string)
 
 	for _, entry := range os.Environ() {
-		e, err := parseEntry(entry)
+		k, v, err := parseEntry(entry)
 		if err == nil {
-			m[e.Key] = e.Value
+			m[k] = v
 		}
 	}
 
@@ -31,9 +33,9 @@ func All() (map[string] string) {
 // Gets the specified environment variable as a string.
 func Get(key string) (val string, ok bool) {
 	for _, entry := range os.Environ() {
-		e, err := parseEntry(entry)
-		if err == nil && e.Key == key {
-			return e.Value, true
+		k, v, err := parseEntry(entry)
+		if err == nil && k == key {
+			return v, true
 		}
 	}
 
@@ -92,7 +94,7 @@ func GetList(key string) (vals []string, ok bool) {
 func MustGet(key string) (val string) {
 	val, ok := Get(key)
 	if !ok {
-		panic(fmt.Errorf("Missing environment variable %s.", key))
+		panic(fmt.Errorf("Missing environment variable $%s.", key))
 	}
 	return
 }
@@ -100,7 +102,7 @@ func MustGet(key string) (val string) {
 func MustGetFloat(key string) (val float64) {
 	val, ok := GetFloat(key)
 	if !ok {
-		panic(fmt.Errorf("Missing environment variable %s (float).", key))
+		panic(fmt.Errorf("Missing environment variable $%s (float).", key))
 	}
 	return
 }
@@ -108,7 +110,7 @@ func MustGetFloat(key string) (val float64) {
 func MustGetInt(key string) (val int) {
 	val, ok := GetInt(key)
 	if !ok {
-		panic(fmt.Errorf("Missing environment variable %s (int).", key))
+		panic(fmt.Errorf("Missing environment variable $%s (int).", key))
 	}
 	return
 }
@@ -116,21 +118,7 @@ func MustGetInt(key string) (val int) {
 func MustGetList(key string) (vals []string) {
 	vals, ok := GetList(key)
 	if !ok {
-		panic(fmt.Errorf("Missing environment variable %s (list).", key))
+		panic(fmt.Errorf("Missing environment variable $%s (list).", key))
 	}
-	return
-}
-
-// Parses an environment variable of the form "KEY=VALUE".
-func parseEntry(e string) (entry Entry, err error) {
-	sep := strings.Index(e, "=")
-
-	if sep < 1 {
-		err = fmt.Errorf("Malformed environment variable: %s", e)
-		return
-	}
-
-	entry.Key = e[0:sep]
-	entry.Value = e[sep+1:]
 	return
 }
