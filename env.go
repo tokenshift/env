@@ -32,6 +32,14 @@ func Get(name string) (string, bool) {
 	return "", false
 }
 
+func GetDefault(name string, dflt string) (string, bool) {
+	if val, ok := Get(name); ok {
+		return val, ok
+	} else {
+		return dflt, false
+	}
+}
+
 func Set(name, val string) {
 	fakeVars[name] = val
 }
